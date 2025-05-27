@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💭 PromptSay</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --border-color: #333;
+            --padding-main: 20px;
+            
+            /* Colour palette */
+            --red: #ff4444;
+            --blue: #4488ff;
+            --green: #44ff88;
+            --purple: #aa44ff;
+            --yellow: #ffcc44;
+            --orange: #ff8844;
+            --pink: #ff44aa;
+            --teal: #44ffcc;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        h1, h2, h3 {
+            text-align: center;
+            margin-top: 0;
+        }
+        
+        h1 { color: var(--purple); }
+        h2 { color: var(--blue); }
+        h3 { color: var(--teal); }
+        
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--padding-main);
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            flex: 1;
+        }
+        
+        .screen.active {
+            display: flex;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .prompt-card {
+            text-align: center;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            border-left: 5px solid var(--green);
+        }
+        
+        .word-card {
+            text-align: center;
+            font-size: clamp(1.5rem, 6vw, 2rem);
+            font-weight: bold;
+            color: var(--yellow);
+            border-left: 5px solid var(--yellow);
+        }
+        
+        button {
+            background-color: var(--red);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+            width: 100%;
+            max-width: 250px;
+        }
+        
+        button:hover {
+            filter: brightness(1.2);
+            transform: translateY(-2px);
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .players-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+        }
+        
+        .player {
+            background-color: var(--card-bg);
+            border-radius: 5px;
+            padding: 10px 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+            border: 1px solid var(--border-color);
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .player:hover {
+            transform: scale(1.05);
+        }
+        
+        .player.current {
+            border: 2px solid var(--yellow);
+            box-shadow: 0 0 15px rgba(255, 204, 68, 0.3);
+        }
+        
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+            word-break: break-word;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .player-score {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            width: 100%;
+            max-width: 300px;
+            margin: 5px auto;
+            transition: border 0.3s;
+        }
+        
+        input:focus {
+            border-color: var(--blue);
+            outline: none;
+        }
+        
+        .highlight {
+            font-weight: bold;
+        }
+        
+        .winner-card {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 20px 0;
+            border-left: 5px solid var(--pink);
+        }
+        
+        .winner-name {
+            font-size: 2em;
+            margin: 10px 0;
+            color: var(--pink);
+            text-shadow: 0 0 10px rgba(255, 68, 170, 0.5);
+        }
+        
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 300px;
+            margin: 20px auto;
+        }
+        
+        .menu-btn {
+            background: linear-gradient(135deg, var(--purple), var(--blue));
+        }
+        
+        .secondary-btn {
+            background: linear-gradient(135deg, var(--card-bg), #2a2a2a);
+            border: 1px solid var(--border-color);
+        }
+        
+        .award-points-mode .player {
+            border: 2px solid transparent;
+        }
+        
+        .award-points-mode .player:hover {
+            border: 2px solid var(--green);
+        }
+        
+        .colour-0 { color: var(--red); }
+        .colour-1 { color: var(--blue); }
+        .colour-2 { color: var(--green); }
+        .colour-3 { color: var(--purple); }
+        .colour-4 { color: var(--yellow); }
+        .colour-5 { color: var(--orange); }
+        .colour-6 { color: var(--pink); }
+        .colour-7 { color: var(--teal); }
+        
+        @media (max-width: 600px) {
+            :root {
+                --padding-main: 15px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            button {
+                padding: 10px 15px;
+                font-size: 1em;
+            }
+            
+            .player {
+                min-width: calc(50% - 10px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Screen -->
+    <div class="screen active" id="menuScreen">
+        <h1>PromptSay</h1>
+        <div class="menu-buttons">
+            <button id="newGameBtn" class="menu-btn">New Game</button>
+            <button id="howToPlayBtn" class="menu-btn">How To Play</button>
+        </div>
+    </div>
+    
+    <!-- How To Play Screen -->
+    <div class="screen" id="howToPlayScreen">
+        <h1>How To Play</h1>
+        <div class="card">
+            <h3>Game Rules</h3>
+            <ol>
+                <li>Set up players (minimum 2)</li>
+                <li>Generate a prompt and a word</li>
+                <li>Players take turns completing the challenge</li>
+                <li>The Game Master awards points for creative answers</li>
+                <li>Play continues until you decide to end the game</li>
+                <li>The player with the most points wins!</li>
+            </ol>
+            <p>Example: If the prompt is "Come up with a fast food restaurant with this word in its name:" and the word is "DUCK", you might say "Duck Burger King" or "McDuck's".</p>
+        </div>
+        <div class="button-group">
+            <button id="backToMenuBtn" class="secondary-btn">Back to Menu</button>
+        </div>
+    </div>
+    
+    <!-- Player Setup Screen -->
+    <div class="screen" id="playerSetupScreen">
+        <h1>Player Setup</h1>
+        <div class="card">
+            <h3>Players</h3>
+            <div id="playerInputs">
+                <input type="text" id="player1" placeholder="Player 1 Name">
+                <input type="text" id="player2" placeholder="Player 2 Name">
+            </div>
+            <div class="button-group">
+                <button id="addPlayerBtn">Add Player</button>
+                <button id="removePlayerBtn" class="secondary-btn">Remove Player</button>
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="startGameBtn">Start Game</button>
+            <button id="cancelSetupBtn" class="secondary-btn">Cancel</button>
+        </div>
+    </div>
+    
+    <!-- Game Screen -->
+    <div class="screen" id="gameScreen">
+        <div class="game-container">
+            <div class="card prompt-card">
+                <p id="currentPrompt">Click "New Round" to begin</p>
+            </div>
+            
+            <div class="card word-card">
+                <p id="currentWord">WORD</p>
+            </div>
+            
+            <div class="card">
+                <h3>Players</h3>
+                <div class="players-container" id="playersList">
+                    <!-- Player cards will be added here -->
+                </div>
+            </div>
+            
+            <div class="card controls">
+                <div class="button-group">
+                    <button id="awardPointBtn">Award Point</button>
+                    <button id="nextRoundBtn">Next Round</button>
+                    <button id="endGameBtn" class="secondary-btn">End Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Game End Screen -->
+    <div class="screen" id="gameEndScreen">
+        <h1>Game Over!</h1>
+        <div class="card winner-card">
+            <h2>Winner</h2>
+            <div class="winner-name" id="winnerName"></div>
+            <p>with <span class="highlight" id="winnerScore"></span> points!</p>
+        </div>
+        <div class="card">
+            <h3>Final Scores</h3>
+            <div class="players-container" id="finalScoresList">
+                <!-- Final scores will be added here -->
+            </div>
+        </div>
+        <div class="button-group">
+            <button id="playAgainBtn">Play Again</button>
+            <button id="menuBtn" class="secondary-btn">Back to Menu</button>
+        </div>
+    </div>
+    
+    <script>
+// Game data
+        const prompts = [
+        "Come up with a classic novel with this word in the title:",
+        "Come up with a fast food restaurant with this word in its name:",
+        "Come up with a flashy wrestling move with this word in its name:",
+        "Come up with a hit new video game with this word in its title:",
+        "Come up with a hot new Broadway musical with this word in its name:",
+        "Come up with a hot new website with this word in its name:",
+        "Come up with a music group with this word in their name:",
+        "Come up with a new cartoon character with this word in his name:",
+        "Come up with a new snack food with this word in its name:",
+        "Come up with a new sport with this word in its name:",
+        "Come up with a shocking newspaper headline with this word in its title:",
+        "Come up with a clever insult using this word:",
+        "Come up with an award-winning movie with this word in its title:",
+        "Create a clickbait YouTube video title with this word:",
+        "Create a rejected Super Bowl ad slogan with this word:",
+        "Create a weird tattoo idea featuring this word:",
+        "Design a cursed Halloween costume with this word in its name:",
+        "Imagine a bizarre law that includes this word:",
+        "Invent a new slang term using this word:",
+        "Invent a ridiculous infomercial product with this word:",
+        "Invent a terrible pickup line using this word:",
+        "Name a doomed cruise ship with this word in its title:",
+        "Name a failed tech startup with this word in it:",
+        "Name a failed toy from the 90s with this word:",
+        "Name a questionable energy drink with this word:",
+        "Pitch a terrible self-help book using this word:",
+        "Write a dramatic soap opera title with this word:",
+        "Write a tabloid gossip headline featuring this word:",
+        "Come up with a dystopian corporation name with this word:",
+        "Come up with a rejected gameshow category with this word:"
+    ];
+    
+
+	const words = [
+        "BLERN", "BLORT", "BLURP", "BLURT", "BONK", "BRICK", "CRUMB", "DINGLE",
+        "DROOP", "DUCK", "DUMP", "FIZZ", "FLAB", "FLINT", "FLOOF", "FLUMP", "FROG",
+        "GLINT", "GLOOP", "GLORP", "GRATE", "GRONK", "HINGE", "JELLY", "LICK",
+        "MEGA", "MICRO", "MOLD", "MULE", "NIMBLE", "PANT", "PLANK", "PLUM", "PLUMP",
+        "PORK", "PRICK", "PUMP", "QUILT", "QUIRK", "SNICK", "SNOOF", "SNOOT",
+        "SNORT", "SPLAT", "SPORK", "SQUIRM", "SQUISH", "TAINT", "TWIG", "VEX",
+        "WART", "WIBBLE", "WOMBAT", "WUMP", "YOLK", "ZEST", "ZOINK", "ZONK", "ZORK",
+        "QUILT"
+    ];
+        
+        // Game state
+        let players = [];
+        let currentPlayerIndex = 0;
+        let playerCount = 2;
+        let awardPointsMode = false;
+        
+        // DOM elements
+        const screens = {
+            menu: document.getElementById('menuScreen'),
+            howToPlay: document.getElementById('howToPlayScreen'),
+            playerSetup: document.getElementById('playerSetupScreen'),
+            game: document.getElementById('gameScreen'),
+            gameEnd: document.getElementById('gameEndScreen')
+        };
+        
+        const currentPrompt = document.getElementById('currentPrompt');
+        const currentWord = document.getElementById('currentWord');
+        const playerInputs = document.getElementById('playerInputs');
+        const playersList = document.getElementById('playersList');
+        const finalScoresList = document.getElementById('finalScoresList');
+        const winnerName = document.getElementById('winnerName');
+        const winnerScore = document.getElementById('winnerScore');
+        const awardPointBtn = document.getElementById('awardPointBtn');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        
+        // Buttons
+        document.getElementById('newGameBtn').addEventListener('click', () => showScreen('playerSetup'));
+        document.getElementById('howToPlayBtn').addEventListener('click', () => showScreen('howToPlay'));
+        document.getElementById('backToMenuBtn').addEventListener('click', () => showScreen('menu'));
+        document.getElementById('addPlayerBtn').addEventListener('click', addPlayer);
+        document.getElementById('removePlayerBtn').addEventListener('click', removePlayer);
+        document.getElementById('startGameBtn').addEventListener('click', startGame);
+        document.getElementById('cancelSetupBtn').addEventListener('click', () => showScreen('menu'));
+        awardPointBtn.addEventListener('click', toggleAwardPointsMode);
+        document.getElementById('nextRoundBtn').addEventListener('click', nextRound);
+        document.getElementById('endGameBtn').addEventListener('click', endGame);
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            showScreen('playerSetup');
+            // Keep same players but reset scores
+            if (players.length > 0) {
+                playerCount = players.length;
+                setupPlayerInputs();
+            }
+        });
+        document.getElementById('menuBtn').addEventListener('click', () => showScreen('menu'));
+        
+        // Functions
+        function showScreen(screenName) {
+            // Hide all screens
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            // Show requested screen
+            screens[screenName].classList.add('active');
+            
+            // Special setup for certain screens
+            if (screenName === 'playerSetup') {
+                setupPlayerInputs();
+            } else if (screenName === 'gameEnd') {
+                displayFinalScores();
+            } else if (screenName === 'game') {
+                awardPointsMode = false;
+                updateAwardPointsButton();
+            }
+        }
+        
+        function setupPlayerInputs() {
+            playerInputs.innerHTML = '';
+            for (let i = 1; i <= playerCount; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `player${i}`;
+                input.placeholder = `Player ${i} Name`;
+                // If we have existing players (from play again), pre-fill names
+                if (players[i-1]) {
+                    input.value = players[i-1].name;
+                }
+                playerInputs.appendChild(input);
+            }
+        }
+        
+        function generatePrompt() {
+            const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+            currentPrompt.textContent = randomPrompt;
+        }
+        
+        function generateWord() {
+            const randomWord = words[Math.floor(Math.random() * words.length)];
+            currentWord.textContent = randomWord;
+        }
+        
+        function newRound() {
+            generatePrompt();
+            generateWord();
+        }
+        
+        function addPlayer() {
+            playerCount++;
+            setupPlayerInputs();
+        }
+        
+        function removePlayer() {
+            if (playerCount > 2) {
+                playerCount--;
+                setupPlayerInputs();
+            }
+        }
+        
+        function startGame() {
+            players = [];
+            for (let i = 1; i <= playerCount; i++) {
+                const playerName = document.getElementById(`player${i}`).value || `Player ${i}`;
+                players.push({
+                    name: playerName,
+                    score: 0,
+                    colour: `colour-${(i-1) % 8}` // Assign colour based on index
+                });
+            }
+            
+            currentPlayerIndex = 0;
+            renderPlayers();
+            showScreen('game');
+            newRound();
+        }
+        
+        function renderPlayers() {
+            playersList.innerHTML = '';
+            players.forEach((player, index) => {
+                const playerElement = document.createElement('div');
+                playerElement.className = `player ${player.colour}`;
+                if (index === currentPlayerIndex && !awardPointsMode) {
+                    playerElement.classList.add('current');
+                }
+                
+                playerElement.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-score">${player.score}</div>
+                `;
+                
+                if (awardPointsMode) {
+                    playerElement.addEventListener('click', () => awardPointToPlayer(index));
+                }
+                
+                playersList.appendChild(playerElement);
+            });
+        }
+        
+        function toggleAwardPointsMode() {
+            awardPointsMode = !awardPointsMode;
+            updateAwardPointsButton();
+            
+            if (awardPointsMode) {
+                document.getElementById('gameScreen').classList.add('award-points-mode');
+                nextRoundBtn.disabled = true;
+            } else {
+                document.getElementById('gameScreen').classList.remove('award-points-mode');
+                nextRoundBtn.disabled = false;
+            }
+            
+            renderPlayers();
+        }
+        
+        function updateAwardPointsButton() {
+            if (awardPointsMode) {
+                awardPointBtn.textContent = 'Cancel Award';
+                awardPointBtn.style.backgroundColor = 'var(--orange)';
+            } else {
+                awardPointBtn.textContent = 'Award Point';
+                awardPointBtn.style.backgroundColor = 'var(--green)';
+            }
+        }
+        
+        function awardPointToPlayer(playerIndex) {
+            players[playerIndex].score++;
+            renderPlayers();
+            
+            // Auto-exit award mode after giving a point
+            toggleAwardPointsMode();
+        }
+        
+        function nextRound() {
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+            newRound();
+            renderPlayers();
+        }
+        
+        function endGame() {
+            showScreen('gameEnd');
+        }
+        
+        function displayFinalScores() {
+            // Sort players by score (descending)
+            const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+            
+            // Display winner
+            winnerName.textContent = sortedPlayers[0].name;
+            winnerScore.textContent = sortedPlayers[0].score;
+            
+            // Display all scores
+            finalScoresList.innerHTML = '';
+            sortedPlayers.forEach((player, index) => {
+                const playerElement = document.createElement('div');
+                playerElement.className = `player ${player.colour}`;
+                if (index === 0) {
+                    playerElement.style.borderColor = 'var(--yellow)';
+                }
+                playerElement.innerHTML = `
+                    <div class="player-name">${player.name}</div>
+                    <div class="player-score">${player.score}</div>
+                    ${index === 0 ? '<div>👑</div>' : ''}
+                `;
+                finalScoresList.appendChild(playerElement);
+            });
+        }
+        
+        // Initialize
+        showScreen('menu');
+    </script>
+</body>
+</html>
